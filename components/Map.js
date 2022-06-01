@@ -1,33 +1,11 @@
-
 import React, { useState, useEffect } from "react";
-import { StyleSheet, View, PermissionsAndroid, TouchableOpacity, Modal, Text, Button, Animated, Polyline, Pressable } from 'react-native';
+import { StyleSheet, View, PermissionsAndroid, TouchableOpacity, Modal, Text, Button, Animated, Polyline, Pressable, TouchableHighlight } from 'react-native';
 import MapView from 'react-native-maps';
 import { Dimensions } from 'react-native';
 import { Marker } from "react-native-maps";
 import {decode} from "@mapbox/polyline"; //please install this package before running!
-const getDirections = async (startLoc, destinationLoc) => {
-  try {
-    const KEY = "sylvan-faculty-345110"; //put your API key here.
-    //otherwise, you'll have an 'unauthorized' error.
-    let resp = await fetch(
-      `https://maps.googleapis.com/maps/api/directions/json?origin=${startLoc}&destination=${destinationLoc}&key=${KEY}`
-    );
-    let respJson = await resp.json();
-    let points = decode(respJson.routes[0].overview_polyline.points);
-    console.log(points);
-    let coords = points.map((point, index) => {
-      return {
-        latitude: point[0],
-        longitude: point[1]
-      };
-    });
-    return coords;
-  } catch (error) {
-    return error;
-  }
-};
-
-let avisUser = null;
+// importing library to use Stopwatch and Timer
+import {Stopwatch, Timer} from 'react-native-stopwatch-timer';
 
 
 const mapStyle = [
@@ -248,7 +226,7 @@ const mapStyle = [
     ]
   }
 ]; //map styles go here!
-
+ 
 
 const ModalPoup = ({visible, children}) => {
   const [showModal, setShowModal] = React.useState(visible);
@@ -286,21 +264,16 @@ const ModalPoup = ({visible, children}) => {
 };
 
 export default function app() {
-  const [coords, setCoords] = useState([]);
   const [visible, setVisible] = React.useState(false);
-
-  useEffect(() => {
-    console.log(avisUser);
-    console.log(avisUser);
-    //fetch the coordinates and then store its value into the coords Hook.
-    getDirections("52.5200066,13.404954", "50.1109221,8.6821267")
-      .then(coords => setCoords(coords))
-      .catch(err => console.log("Something went wrong"));
-  }, []);
-
+  const [isTimerStart, setIsTimerStart] = useState(false);
+  const [isStopwatchStart, setIsStopwatchStart] = useState(false);
+  const [timerDuration, setTimerDuration] = useState(90000);
+  const [resetTimer, setResetTimer] = useState(false);
+  const [resetStopwatch, setResetStopwatch] = useState(false);
 
   return (
     <View style={styles.container}>
+    
       <MapView style={styles.map}
       
       initialRegion={{
@@ -320,8 +293,6 @@ export default function app() {
         }}
         pinColor="green"
       />
-      {/* finally, render the Polyline component with the coords data */}
-      {coords.length > 0 && <Polyline coordinates={coords} />}
       </MapView>
       
       <View style={{flex: 1, justifyContent: 'center', alignItems: 'bottom', position:'absolute', zIndex: 999}}>
@@ -337,16 +308,40 @@ export default function app() {
         <Text style={{marginVertical: 30, fontSize: 20, textAlign: 'center'}}>
           Course n°1
         </Text>
-        <Button title="Lancer la course"/>
+        <TouchableHighlight
+            onPress={() => {
+              setIsStopwatchStart(!isStopwatchStart);
+              setResetStopwatch(false);
+            }}>
+            <Text style={styles.button2}>
+              {!isStopwatchStart ? 'Lancer la course' : 'Arreter la course'}
+            </Text>
+          </TouchableHighlight>
+          <TouchableHighlight
+            onPress={() => {
+              setIsStopwatchStart(false);
+              setResetStopwatch(true);
+            }}>
+            <Text style={{display:'none'}}>RESET</Text>
+          </TouchableHighlight>
       </ModalPoup>
       <Pressable style={styles.button} onPress={() => setVisible(true)}>
         <Text style={styles.text}>Voir la course</Text>
       </Pressable>
+      <Stopwatch style={styles.timer}
+            laps
+            msecs
+            start={isStopwatchStart}
+            // To start
+            reset={resetStopwatch}
+            // To reset
+            options={options}
+            // Options for the styling
+            getTime={(time) => {
+              console.log(time);
+            }}
+          />
     </View>
-
-        <View style={{flex: 1, justifyContent: 'center', alignItems: 'bottom', position:'absolute', zIndex: -10}}>
-          <Text>Zoomez pour afficher les courses</Text>
-        </View>
       
 
     </View>
@@ -354,21 +349,21 @@ export default function app() {
 }
 
 const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: '#fff',
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    map: {
-      width: Dimensions.get('window').width,
-      height: Dimensions.get('window').height,
-    },
-    modalBackGround: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
+  container: {
+    flex: 9,
+    backgroundColor: '#fff',
     alignItems: 'center',
+    justifyContent: 'center',
+  },
+  map: {
+    width: Dimensions.get('window').width,
+    height: Dimensions.get('window').height,
+  },
+  modalBackGround: {
+  flex: 1,
+  backgroundColor: 'rgba(0,0,0,0.5)',
+  justifyContent: 'center',
+  alignItems: 'center',
   },
   button: {
     alignItems: 'bottom',
@@ -378,6 +373,16 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     elevation: 3,
     backgroundColor: 'green'
+    },
+  button2: {
+    alignItems: 'bottom',
+    justifyContent: 'bottom',
+    paddingVertical: 12,
+    paddingHorizontal: 32,
+    borderRadius: 10,
+    elevation: 3,
+    backgroundColor: 'yellow',
+    textAlign:'center'
     },
   text: {
     fontSize: 16,
@@ -404,10 +409,48 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     elevation: 20,
   },
-  header: {
+  header2: {
     width: '100%',
     height: 40,
     alignItems: 'flex-end',
     justifyContent: 'center',
-  }
-  });
+  },
+  container2: {
+    flex: 1,
+    padding: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  title2: {
+    textAlign: 'center',
+    fontSize: 20,
+    fontWeight: 'bold',
+    padding: 20,
+  },
+  sectionStyle: {
+    flex: 1,
+    marginTop: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  buttonText: {
+    fontSize: 20,
+    marginTop: 10,
+  },
+});
+
+const options = {
+  container: {
+    backgroundColor: '#FF0000',
+    padding: 5,
+    borderRadius: 5,
+    width: '100%',
+    bottom :0,
+    alignItems: 'center',
+  },
+  text: {
+    fontSize: 25,
+    color: '#FFF',
+    marginLeft: 7,
+  },
+};
