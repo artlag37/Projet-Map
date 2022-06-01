@@ -1,6 +1,6 @@
 import React, { Component, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View, Modal } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import {
   NavigationContainer,
@@ -30,6 +30,7 @@ function LeaderBoardScreen({ navigation }) {
     <LeaderBoard />
   );
 }
+
 
 class App extends Component {
   state = {
